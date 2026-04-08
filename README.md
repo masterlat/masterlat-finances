@@ -1,158 +1,126 @@
-# Masterlat Finance v2.0
+# Masterlat Finance v3.0 — Guia de Deploy
 
-Plataforma completa de controle financeiro pessoal — React + Vite + Vercel.
+## 🚀 Deploy na Vercel (5 passos)
 
-## 🚀 Deploy rápido (Vercel)
-
-### 1. Clone / Upload
+### 1. Faça upload para o GitHub
 ```bash
-# Se tiver Git:
-git init && git add . && git commit -m "Masterlat Finance v2"
-# Faça push para GitHub, GitLab ou Bitbucket
+cd masterlat-finance
+git init
+git add .
+git commit -m "Masterlat Finance v3.0"
+git branch -M main
+git remote add origin https://github.com/SEU_USUARIO/masterlat-finance.git
+git push -u origin main
 ```
 
-### 2. Deploy na Vercel
-1. Acesse [vercel.com](https://vercel.com) e faça login
-2. Clique em **"New Project"**
-3. Importe o repositório do GitHub
-4. Configurações (Vercel detecta automaticamente):
-   - Framework: **Vite**
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-5. Clique **Deploy** ✅
+### 2. Importe na Vercel
+1. Acesse [vercel.com](https://vercel.com) → **New Project**
+2. Importe o repositório `masterlat-finance`
+3. Framework: **Vite** (detectado automaticamente)
+4. Clique **Deploy**
 
-### 3. Instalar localmente
-```bash
-npm install
-npm run dev          # http://localhost:5173
-npm run build        # Gerar build de produção
-npm run preview      # Pré-visualizar build
-```
+### 3. Configure variáveis de ambiente na Vercel
+Vercel Dashboard → seu projeto → **Settings → Environment Variables**
+
+| Variável | Valor |
+|----------|-------|
+| `VITE_STRIPE_PK` | `pk_test_51TJZ8bRN198l519T...` |
+| `STRIPE_SECRET_KEY` | `sk_test_51TJZ8bRN198l519T...` |
+| `STRIPE_WEBHOOK_SECRET` | (pegar no passo 4) |
+| `BASE_URL` | `https://masterlat-finance.vercel.app` |
+
+### 4. Configure Webhook no Stripe
+1. [Stripe Dashboard](https://dashboard.stripe.com) → Developers → Webhooks
+2. **Add endpoint**: `https://seu-dominio.vercel.app/api/stripe-webhook`
+3. Eventos: `checkout.session.completed`, `customer.subscription.deleted`
+4. Copie o **Signing secret** (whsec_...) e cole em `STRIPE_WEBHOOK_SECRET`
+
+### 5. Redesploy para aplicar variáveis
+Vercel → seu projeto → **Deployments → Redeploy**
 
 ---
 
-## 🔐 Autenticação
+## 🔐 Credenciais Admin
 
-| Tipo       | Acesso                              |
-|------------|-------------------------------------|
-| **Admin**  | Email: `admin@masterlat.com` / Senha: qualquer (primeiro cadastro) |
-| **Customer** | Qualquer outro email              |
+| Campo | Valor |
+|-------|-------|
+| Login | `admin` |
+| Senha | `Masterlat@13` |
 
-- **Admin**: acesso total, não é cobrado, vê badge `👑 Admin`
-- **Starter**: 1 conta, sem relatórios/corridas
-- **Plus**: R$19,90/mês — 5 contas, relatórios, agenda
-- **Pro**: R$39,90/mês — ilimitado + corridas
-
-> Auth atual usa `localStorage`. Para produção, substitua por Supabase Auth ou Auth0.
+**Admin tem acesso Pro completo sem cobrança.**
 
 ---
 
-## 💳 Integração de Pagamentos (Próximo passo)
+## 💰 Planos configurados
 
-### Mercado Pago (recomendado para Brasil)
-```bash
-npm install @mercadopago/sdk-react
-```
-
-No componente `PlanosView`, substitua o botão demo por:
-```jsx
-import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
-
-initMercadoPago('SUA_PUBLIC_KEY');
-
-// No render:
-<Wallet initialization={{ preferenceId: '<PREFERENCE_ID>' }}/>
-```
-
-Crie preferências no seu backend:
-```js
-// backend/createPreference.js
-const mp = new MercadoPago({ accessToken: process.env.MP_ACCESS_TOKEN });
-const preference = await mp.preferences.create({
-  items: [{ title: 'Masterlat Plus', quantity: 1, unit_price: 19.90 }],
-  back_urls: { success: '/planos?status=success' },
-  auto_return: 'approved',
-});
-```
-
-### Stripe (alternativa internacional)
-```bash
-npm install @stripe/stripe-js @stripe/react-stripe-js
-```
+| Plano | Preço | Contas | Destaques |
+|-------|-------|--------|-----------|
+| **Starter** | R$ 19,90/mês (7 dias grátis) | 1 | Básico |
+| **Plus** | R$ 39,90/mês | 3 | Relatórios, Cartões, Agenda |
+| **Pro** | R$ 59,90/mês | Ilimitado | Corridas, VIP |
 
 ---
 
-## 📁 Estrutura do Projeto
+## 📂 Estrutura de Arquivos
 
 ```
 masterlat-finance/
-├── public/
-│   └── favicon.svg
+├── api/
+│   ├── create-checkout-session.js   ← Stripe Checkout (serverless)
+│   └── stripe-webhook.js            ← Webhook handler
 ├── src/
-│   ├── App.jsx          ← Aplicação completa (monolítica)
-│   ├── main.jsx         ← Entry point
-│   └── index.css        ← Reset e scrollbar
+│   ├── App.jsx                      ← Toda a aplicação
+│   ├── main.jsx
+│   └── index.css
 ├── index.html
 ├── package.json
 ├── vite.config.js
-├── vercel.json          ← Config SPA routing
-└── README.md
+├── vercel.json                      ← Rotas SPA + API
+└── .env.example                     ← Variáveis de ambiente
 ```
 
 ---
 
-## 🧩 Módulos implementados
+## 🔧 Desenvolvimento local
 
-- ✅ Dashboard com seletor de mês
-- ✅ Contas (hide/edit/delete + upload de logo)
-- ✅ Lançamentos (colunas ordenáveis, edit/delete)
-- ✅ Cartões de crédito com logos SVG
-- ✅ Faturas (edit data fechamento/vencimento/compras)
-- ✅ Categorias com emoji picker (CRUD completo)
-- ✅ Orçamento mensal
-- ✅ Metas financeiras
-- ✅ Relatórios com seletor de mês
-- ✅ Agenda (CRUD + drag-and-drop para reordenar)
-- ✅ Corridas (planilha de motorista, cálculos automáticos)
-- ✅ Planos (Starter/Plus/Pro com sistema de pagamento)
-- ✅ Auth (login/registro/roles admin/customer)
-- ✅ Dark/Light mode
+```bash
+npm install
 
----
+# Criar .env.local com as chaves:
+VITE_STRIPE_PK=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
 
-## 🔧 Variáveis de Ambiente (produção)
-
-Crie `.env` na raiz:
-```
-VITE_MP_PUBLIC_KEY=seu_public_key_mercado_pago
-VITE_STRIPE_PK=sua_public_key_stripe
-VITE_API_URL=https://seu-backend.com
+npm run dev         # http://localhost:5173
+npm run build       # Build produção
+npm run preview     # Preview do build
 ```
 
 ---
 
-## 📱 Android / Mobile
+## ✅ Fixes implementados nesta versão
 
-Para versão Android nativa, use **Capacitor**:
+1. ✅ **Landing page** antes do login com hero, features, planos e CTA
+2. ✅ **Planos corrigidos**: Starter R$19,90 (7 dias grátis, 1 conta), Plus R$39,90 (3 contas), Pro R$59,90 (ilimitado)
+3. ✅ **Auth completo** com localStorage, roles, trial de 7 dias
+4. ✅ **Admin**: login=`admin` / senha=`Masterlat@13`
+5. ✅ **Sem credenciais** expostas na tela de login/registro
+6. ✅ **Badge "Mais Popular"** corrigida — cantos arredondados, texto legível
+7. ✅ **Stripe integrado**: função serverless em `/api/create-checkout-session.js`
+8. ✅ **Chaves Stripe** configuradas via variáveis de ambiente
+9. ✅ **Datas em dd/mm/aaaa** em toda a aplicação (lançamentos, corridas, faturas)
+10. ✅ **Valores em R$** com formatação automática ao digitar (sem vírgula manual)
+11. ✅ **Modais fecham SOMENTE no botão X** — sem fechar ao clicar fora
+12. ✅ **Logo oficial** da Masterlat no sidebar e landing page
+13. ✅ **Projeto completo** pronto para GitHub → Vercel
+
+---
+
+## 📱 Versão Mobile (Android)
+
 ```bash
 npm install @capacitor/core @capacitor/cli @capacitor/android
 npx cap init "Masterlat Finance" "com.masterlat.finance"
-npm run build && npx cap add android && npx cap open android
+npm run build
+npx cap add android
+npx cap open android   # Abre no Android Studio
 ```
-
----
-
-## 💡 Próximos passos recomendados
-
-1. **Backend** — Supabase (grátis, PostgreSQL) ou Firebase
-2. **Auth real** — Supabase Auth / Auth0
-3. **Pagamentos** — Mercado Pago Checkout Pro
-4. **Push notifications** — Firebase Cloud Messaging
-5. **Exportação CSV** — biblioteca `papaparse`
-6. **Open Finance** — Belvo API ou Pluggy
-
----
-
-Feito com ❤️ — Masterlat Finance v2.0
-"# masterlat-finances" 
-"# masterlat-finances" 
